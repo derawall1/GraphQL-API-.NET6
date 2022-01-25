@@ -2,6 +2,8 @@ using CommanderGQL.Data;
 using CommanderGQL.GraphQL;
 using Microsoft.EntityFrameworkCore;
 using GraphQL.Server.Ui.Voyager;
+using CommanderGQL.Extensions;
+
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -13,9 +15,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddPooledDbContextFactory<AppDbContext>(options=>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CommandConStr"))
     );
+builder.Services.AddScoped<AppDbContext>(p => p.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
 builder.Services
     .AddGraphQLServer()
-    .AddQueryType<Query>();
+    .AddQueryType<Query>()
+    .AddProjections();
 
 #endregion
 
@@ -24,7 +28,7 @@ IConfiguration config = app.Configuration;
 IWebHostEnvironment env = app.Environment;
 // configure midelwares e.g. configure section
 #region  Configure 
-
+app.ApplyMigrations();
 if (env.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -43,4 +47,6 @@ app.UseGraphQLVoyager(new VoyagerOptions()
 }, "/graphql-voyager");
 
 #endregion
+// database migrations
+
 app.Run();
